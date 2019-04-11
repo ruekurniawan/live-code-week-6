@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <title>Classic Fox - First Live Code</title>
+</head>
+
+<body>
+  <div id='app'>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <a class="navbar-brand" href="/">Dad Jokes</a>
+        <a v-if="isLogin" v-on:click.prevent="submitLogout"href="#" class="text-danger">Logout</a>
+      </div>
+    </nav>
+    <div v-if="isLogin">
+        <div class="jumbotron">
+            <div class="container">
+              <h1 v-for="joke in jokes" class="display-4">{{joke}}</h1>
+              <hr class="my-4">
+              <p>Do you like this joke?</p>
+              <a class="btn btn-success" href="#" role="button">Yes, add this to My Favorites</a>
+              <a class="btn btn-danger" href="#" role="button">No, generate new joke</a>
+            </div>
+          </div>
+          <div class="container">
+            <h1 class="text-center">My Favorites</h1>
+            <hr class="my-4">
+            <div class="row">
+              <div class="col-lg-4 mb-4">
+                <div class="card">
+                  <div class="card-body">
+                    <p class="card-text">A joke...</p>
+                    <a href="#" class="card-link text-danger">Remove</a>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4 mb-4">
+                <div class="card">
+                  <div class="card-body">
+                    <p class="card-text">A joke...</p>
+                    <a href="#" class="card-link text-danger">Remove</a>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4 mb-4">
+                <div class="card">
+                  <div class="card-body">
+                    <p class="card-text">A joke...</p>
+                    <a href="#" class="card-link text-danger">Remove</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+    
+
+    <div v-else="isLogin" class="container my-4">
+      <div class="row justify-content-center">
+        <div class="col-4">
+          <div class="card mb-4">
+            <div class="card-header text-center">Login</div>
+            <div class="card-body">
+              <form method="post">
+                <div class="form-group">
+                  <label for="email">Email address</label>
+                  <input type="email" class="form-control" v-model="emailInput" aria-describedby="emailHelp"
+                    placeholder="Enter email">
+                  <small id="emailHelp" class="form-text text-muted">
+                    We'll never share your email with anyone else.
+                  </small>
+                </div>
+                <div class="form-group">
+                  <label for="password">Password</label>
+                  <input type="password" class="form-control" v-model="passwordInput" placeholder="Password">
+                </div>
+                <button v-on:click.prevent="submitLogin" type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+    <script>
+      var dbUrl = 'http://localhost:3000'
+      var app = new Vue({
+        el: '#app',
+        data: {
+          isLogin: false,
+          emailInput: '',
+          passwordInput: '',
+          jokes:[]
+        },
+        mounted() {
+          if (localStorage.getItem('token')) {
+            this.checkLogin()
+          }
+        },
+        methods: {
+          jokeUrl: function () {
+            axios({
+              method: 'get',
+              url: dbUrl + '/jokes',
+              headers: {
+                token: localStorage.getItem('token')
+              }
+            })
+            .then(({data}) => {
+            console.log(data)
+              this.jokes = data
+            })
+            .catch(Err => {
+              console.log(Err)
+            })
+
+          },
+
+          checkLogin() {
+            axios({
+              method: 'get',
+              url: dbUrl + '/users/verify',
+              headers: { token: localStorage.getItem('token') }
+            })
+            .then((user) => {
+              this.isLogin = true;
+            })
+          },
+          submitLogin: function () {
+            axios
+              .post(dbUrl + '/users/login', { email: this.emailInput, password: this.passwordInput })
+              .then(({ data }) => {
+                // console.log(data)
+                this.isLogin = true
+                if (data) {
+                  // console.log(data)
+                  localStorage.setItem('token', data.access_token)
+                  this.emailInput = ''
+                  this.passwordInput = ''
+                  Swal.fire('Sukses Login')
+                  this.checkLogin()
+                } else {
+                  Swal.fire({
+                    type: 'error',
+                    title: 'Oops...',
+                    text: 'You are wrong pasword /email',
+                  })
+                }
+              })
+              .catch(err => {
+                console.log(err)
+              })
+          },
+
+          submitLogout: function () {
+            localStorage.removeItem('token')
+            this.isLogin = false
+          }
+        }
+      })
+      </script>
+
+
+
+</body>
+
+</html>
